@@ -11,8 +11,9 @@ function App() {
 
   const [mySerch, setMySearch] = useState("");
   const [myMovies, setMyMovies] = useState([]);
-  const [showMore, setShowMore] = useState(false);
   const [wordSumbitted, setWordSumbitted] = useState("");
+  const [showMoreState, setShowMoreState] = useState({});
+
 
   useEffect(() => {
     const getMovies = async () => {
@@ -38,8 +39,31 @@ function App() {
    const clearAll = () => {
     setMyMovies([]);
     setMySearch('');
+    setShowMoreState({})
    }
 
+   const toggleShowMore = (id) => {
+    setShowMoreState(prevState => ({...prevState, [id]: !prevState[id]}))
+
+   }
+
+   const fetchTrailer = async (id) => {
+    const response = await fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${MY_KEY}`);
+    const data = await response.json();
+    
+    const trailer = data.results.find((video) => video.type === "Trailer" && video.site === "YouTube");
+
+    if(trailer) {
+      const trailerUrl = `https://www.youtube.com/watch?v=${trailer.key}`;
+      window.open(trailerUrl, "_blank");
+    } else {
+      alert('Trailer is not available')
+    }
+
+    console.log(data)
+
+   }
+ 
   return(
     <div className='container'>
 
@@ -52,15 +76,22 @@ function App() {
       </form>
 
       <div className='movie'>
+
           {myMovies.map((movie) => (
+
             <div key={movie.id} className='movie-box' >
                   <h3>{movie.title}</h3>
                   <p>Vote average: {movie.vote_average}</p>
                   <img src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} alt={movie.title} width="200px"/>
-                  <p>{showMore ? movie.overview : movie.overview.substring(0,117) + "..."}
-                    <button className='btn-showmore' onClick={() => setShowMore(!showMore)}>{showMore ? "Show less" : "Show more"}</button>
+                  <p>
+                    {showMoreState[movie.id] 
+                    ? movie.overview 
+                    : movie.overview.substring(0,117) + "..."}
+                    <button className='btn-showmore' onClick={() => toggleShowMore(movie.id)}>
+                      {showMoreState[movie.id] ? "Show less" : "Show more"}</button>
                   </p>
-                  <button className='btn-trailer'>Watch Trailer</button>
+                  <button className='btn-trailer'
+                    onClick={() => fetchTrailer(movie.id)}>Watch Trailer</button>
             </div>
           ))}
       </div>
